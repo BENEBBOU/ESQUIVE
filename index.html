@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESQUIVE — 100 niveaux de survie</title>
+    <meta name="description" content="Esquivez des vaisseaux pilotés par des steering behaviors : 100 niveaux, 10 mondes, 3 cœurs.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="libraries/p5.min.js"></script>
+    <script src="vehicle.js"></script>
+    <script src="flee.js"></script>
+    <script src="wander.js"></script>
+    <script src="background.js"></script>
+    <script src="sound.js"></script>
+    <script src="population.js"></script>
+    <script src="mouseTarget.js"></script>
+    <script src="target.js"></script>
+    <script src="targetFuyante.js"></script>
+    <script src="vaisseau.js"></script>
+    <script src="particle.js"></script>
+    <script src="effects.js"></script>
+    <script src="game.js"></script>
+    <script src="speedScale.js"></script>
+    <script src="levels.js"></script>
+    <script src="rubberSheet.js"></script>
+    <script src="playerTarget.js"></script>
+    <script src="barrier.js"></script>
+    <script src="menu.js"></script>
+    <script src="sketch.js"></script>
+  </head>
+  <body>
+    <header id="controls">
+      <div class="row">
+        <label for="mode" class="strong">Scénario :</label>
+        <select id="mode">
+          <optgroup label="Jeu">
+            <option value="niveaux" selected>Niveaux — survivez pour gagner des étoiles</option>
+          </optgroup>
+          <optgroup label="Scénarios">
+            <option value="scenario-1">1 — Les vaisseaux chassent la cible</option>
+            <option value="scenario-2">2 — La cible fuit le vaisseau le plus proche</option>
+            <option value="joueur">3 — Mode joueur : échappez aux vaisseaux !</option>
+          </optgroup>
+          <optgroup label="Exercices précédents">
+            <option value="seek-souris">Seek — cible souris</option>
+            <option value="flee-souris">Flee — fuir la souris</option>
+            <option value="target-reapparait">Variante — la Target réapparaît</option>
+          </optgroup>
+        </select>
+
+        <span id="game-controls" class="group game" hidden>
+          <label for="game-start-count">Vaisseaux au départ :</label>
+          <input id="game-start-count" type="range" min="1" max="100" step="1" value="8">
+          <output id="game-start-count-value" for="game-start-count">8</output>
+          <span id="level-info" class="level-info" hidden>
+            <strong id="level-name">Niveau 1</strong>
+            <span id="level-stars" class="stars" aria-label="Étoiles de la partie"></span>
+            <output id="level-next">Bronze dans 1:00</output>
+            <span id="level-best" class="best"></span>
+            <button id="btn-board" type="button" title="Touche N">Tableau des niveaux</button>
+          </span>
+          <output id="game-chrono" class="chrono" aria-label="Chronomètre">00:00.0</output>
+          <output id="game-score" class="score">Score : 0</output>
+          <output id="game-best" class="best">Record : 0</output>
+          <output id="game-size">Taille ×1</output>
+          <button id="game-restart" type="button">Rejouer</button>
+        </span>
+
+        <span id="detection-controls" class="group" hidden>
+          <label for="detection-radius">Détection :</label>
+          <input id="detection-radius" type="range" min="50" max="400" step="10" value="200">
+          <output id="detection-radius-value" for="detection-radius">200 px</output>
+        </span>
+
+        <span id="flee-controls" class="group" hidden>
+          <label for="flee-radius">Zone de fuite :</label>
+          <input id="flee-radius" type="range" min="40" max="400" step="5" value="150">
+          <output id="flee-radius-value" for="flee-radius">150 px</output>
+          <label><input id="flee-naif" type="checkbox"> flee naïf</label>
+        </span>
+
+        <span class="group">
+          <label for="vehicle-count">Vaisseaux :</label>
+          <input id="vehicle-count" type="range" min="1" max="200" step="1" value="20">
+          <output id="vehicle-count-value" for="vehicle-count">20 / 200</output>
+        </span>
+        <span id="reglages" class="group"></span>
+      </div>
+      <div class="row">
+        <label><input id="show-trails" type="checkbox" checked> Traînées</label>
+        <label><input id="show-vectors" type="checkbox"> Vecteurs vitesse</label>
+        <label><input id="show-hud" type="checkbox" checked> Tableau de bord</label>
+        <span class="group">
+          <label for="veil">Voile du fond :</label>
+          <input id="veil" type="range" min="0" max="0.8" step="0.05" value="0.15">
+        </span>
+        <button id="sound-toggle" type="button" aria-pressed="false">Activer le son</button>
+        <button id="pause-toggle" type="button" aria-pressed="false">Pause</button>
+        <output id="inside-count" aria-live="off">Dans le cercle : 0</output>
+        <span id="hint" class="hint"></span>
+      </div>
+    </header>
+    <div id="level-board" class="board" hidden role="dialog" aria-modal="true" aria-labelledby="board-title">
+      <div class="board-panel">
+        <div class="board-head">
+          <h2 id="board-title">Tableau des niveaux</h2>
+          <span id="board-summary" class="board-summary"></span>
+          <button id="board-close" type="button">Fermer</button>
+        </div>
+        <div id="board-grid" class="board-grid"></div>
+        <p class="board-legend">
+          <span class="chip open">jouable</span> <span class="chip locked">verrouillé (validez le précédent)</span>
+          <span class="chip soon">à venir</span> · Échap ou N pour fermer
+        </p>
+      </div>
+    </div>
+    <button id="btn-hud-pause" class="hud-pause" type="button" aria-label="Pause (Échap)" hidden>❚❚</button>
+
+    <div id="menu-root" class="menu-root" hidden>
+      <!-- écran titre -->
+      <section id="screen-title" class="screen title-screen" hidden aria-labelledby="game-title">
+        <div class="logo-wrap">
+          <h1 id="game-title" class="logo">ESQUIVE</h1>
+          <p class="tagline">Survivez 60 secondes. Gardez vos cœurs. Collectionnez les étoiles.</p>
+        </div>
+        <div class="title-actions">
+          <button id="btn-play" class="btn primary big" type="button">Jouer <small></small></button>
+          <button id="btn-levels" class="btn" type="button">Niveaux</button>
+          <div class="row-2">
+            <button id="btn-howto" class="btn ghost" type="button">Comment jouer</button>
+            <button id="btn-settings" class="btn ghost" type="button">Réglages</button>
+          </div>
+        </div>
+        <p class="title-foot"><span id="title-stars">★ 0 / 300</span> · 100 niveaux · 10 mondes</p>
+      </section>
+
+      <!-- choix des niveaux -->
+      <section id="screen-levels" class="screen panel wide" hidden aria-labelledby="world-title">
+        <header class="panel-head">
+          <button class="btn ghost small" type="button" data-back="title">← Retour</button>
+          <h2 id="world-title">Monde 1</h2>
+          <span></span>
+        </header>
+        <nav id="world-tabs" class="world-tabs" aria-label="Mondes"></nav>
+        <div id="level-grid" class="level-grid"></div>
+      </section>
+
+      <!-- comment jouer -->
+      <section id="screen-howto" class="screen panel" hidden aria-labelledby="howto-title">
+        <header class="panel-head">
+          <button class="btn ghost small" type="button" data-back="title">← Retour</button>
+          <h2 id="howto-title">Comment jouer</h2>
+          <span></span>
+        </header>
+        <ul class="howto">
+          <li><b>Déplacez la souris</b> (ou glissez le doigt) : votre boule suit le curseur.</li>
+          <li>Les vaisseaux vous <b>poursuivent</b>. Chaque contact coûte <b class="heart">♥</b>. Vous en avez 3.</li>
+          <li><b>Tenez 60 secondes</b> : vos cœurs restants deviennent vos étoiles — 3 ♥ = <b class="gold">or</b>, 2 = <b class="silver">argent</b>, 1 = <b class="bronze">bronze</b>.</li>
+          <li>Quand ils <b class="red">s'excitent</b>, les vaisseaux virent au rouge et accélèrent.</li>
+          <li>Les <b>barres néon</b> coûtent un cœur au toucher. Les vaisseaux les évitent… mais ne vous y cachez pas : <b>elles surchauffent</b>.</li>
+          <li>Ils tournent large : <b>frôlez-les</b> au dernier moment et changez de direction.</li>
+        </ul>
+        <p class="keys"><kbd>Échap</kbd> pause · <kbd>R</kbd> rejouer · <kbd>Entrée</kbd> niveau suivant</p>
+      </section>
+
+      <!-- réglages -->
+      <section id="screen-settings" class="screen panel" hidden aria-labelledby="settings-title">
+        <header class="panel-head">
+          <button class="btn ghost small" type="button" data-back="title">← Retour</button>
+          <h2 id="settings-title">Réglages</h2>
+          <span></span>
+        </header>
+        <label class="toggle"><input id="set-sound" type="checkbox"><span></span> Son</label>
+        <label class="toggle"><input id="set-shake" type="checkbox"><span></span> Tremblements de l'écran</label>
+        <label class="toggle"><input id="set-rubber" type="checkbox"><span></span> Fond élastique animé</label>
+      </section>
+
+      <!-- pause -->
+      <section id="screen-pause" class="screen panel narrow" hidden aria-labelledby="pause-title">
+        <h2 id="pause-title" class="center">Pause</h2>
+        <div class="stack">
+          <button id="btn-resume" class="btn primary" type="button">Reprendre</button>
+          <button id="btn-pause-restart" class="btn" type="button">Recommencer</button>
+          <button id="btn-pause-levels" class="btn" type="button">Niveaux</button>
+          <button id="btn-pause-menu" class="btn ghost" type="button">Menu principal</button>
+        </div>
+      </section>
+
+      <!-- fin de partie -->
+      <section id="screen-end" class="screen panel narrow end" hidden aria-labelledby="end-title" aria-live="polite">
+        <p id="end-kicker" class="kicker"></p>
+        <h2 id="end-title" class="center"></h2>
+        <div id="end-stars" class="end-stars"></div>
+        <p id="end-detail" class="center muted"></p>
+        <p id="end-best" class="center best-line"></p>
+        <div class="stack">
+          <button id="btn-end-next" class="btn primary" type="button" hidden></button>
+          <button id="btn-end-retry" class="btn" type="button">Rejouer</button>
+          <button id="btn-end-levels" class="btn ghost" type="button">Niveaux</button>
+        </div>
+      </section>
+    </div>
+    <main id="scene" aria-label="Simulation de vaisseaux et de cibles (steering behaviors)"></main>
+  </body>
+</html>
