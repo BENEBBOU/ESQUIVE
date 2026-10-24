@@ -534,3 +534,20 @@ kbd { padding: 2px 8px; border: 1px solid var(--line); border-bottom-width: 3px;
 @media (prefers-reduced-motion: reduce) {
   .screen, .logo, .end-stars .star { animation: none; transform: none; }
 }
+
+/* ---------- mode test ---------- */
+.toggle .toggle-text { display: flex; flex-direction: column; gap: 2px; width: auto; height: auto; background: none; border-radius: 0; }
+.toggle .toggle-text::after { content: none; }
+.toggle .toggle-text small { color: var(--ink-soft); font-size: 0.8rem; }
+.toggle.test input:checked + span { background: linear-gradient(120deg, #ff8a00, #ff2d55); }
+.test-badge {
+  margin: -14px 0 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #ff8a00, #ff2d55);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.test-badge[hidden] { display: none; }

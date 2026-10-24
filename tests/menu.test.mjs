@@ -9,18 +9,27 @@ for (const file of ['levels.js', 'menu.js']) {
 }
 const Menu = vm.runInContext('Menu', context);
 
-test('réglages : valeurs par défaut (son, tremblements, fond animé activés)', () => {
+test('réglages : valeurs par défaut (son, tremblements, fond animé activés ; mode test désactivé)', () => {
   const s = Menu.loadSettings({ getItem: () => null });
-  assert.equal(JSON.stringify(s), JSON.stringify({ sound: true, shake: true, rubber: true }));
+  assert.equal(JSON.stringify(s), JSON.stringify({ sound: true, shake: true, rubber: true, testMode: false }));
+});
+
+test('mode test : enregistré et relu comme les autres réglages', () => {
+  const data = {};
+  const storage = { getItem: k => data[k] ?? null, setItem: (k, v) => { data[k] = v; } };
+  Menu.saveSettings(storage, { ...Menu.DEFAULT_SETTINGS, testMode: true });
+  assert.equal(Menu.loadSettings(storage).testMode, true);
 });
 
 test('réglages : sauvegarde puis relecture, complétés par les valeurs par défaut', () => {
   const data = {};
   const storage = { getItem: k => data[k] ?? null, setItem: (k, v) => { data[k] = v; } };
   Menu.saveSettings(storage, { sound: false, shake: true, rubber: false });
-  assert.equal(JSON.stringify(Menu.loadSettings(storage)), JSON.stringify({ sound: false, shake: true, rubber: false }));
+  assert.equal(JSON.stringify(Menu.loadSettings(storage)),
+    JSON.stringify({ sound: false, shake: true, rubber: false, testMode: false }));
   data['esquive-reglages'] = JSON.stringify({ sound: false });
-  assert.equal(JSON.stringify(Menu.loadSettings(storage)), JSON.stringify({ sound: false, shake: true, rubber: true }));
+  assert.equal(JSON.stringify(Menu.loadSettings(storage)),
+    JSON.stringify({ sound: false, shake: true, rubber: true, testMode: false }));
 });
 
 test('réglages : stockage indisponible ou corrompu toléré', () => {

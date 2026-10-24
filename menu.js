@@ -4,7 +4,8 @@
 const Menu = (() => {
   const SCREENS = ['title', 'levels', 'howto', 'settings', 'pause', 'end'];
   const SETTINGS_KEY = 'esquive-reglages';
-  const DEFAULT_SETTINGS = { sound: true, shake: true, rubber: true };
+  // testMode : mode test, tous les niveaux ouverts (pour essayer n'importe quel niveau)
+  const DEFAULT_SETTINGS = { sound: true, shake: true, rubber: true, testMode: false };
   let handlers = {};
   let current = null;
   let world = 1;
@@ -62,6 +63,7 @@ const Menu = (() => {
   function renderTitle() {
     const total = LevelRules.totalStars(data.progress);
     $('title-stars').textContent = `★ ${total} / ${LevelRules.TOTAL_LEVELS * 3}`;
+    $('test-badge').hidden = !data.unlockAll;
     const next = LevelRules.continueLevel(data.progress, { unlockAll: data.unlockAll });
     $('btn-play').querySelector('small').textContent = `Niveau ${next} — ${LevelRules.get(next).name}`;
   }

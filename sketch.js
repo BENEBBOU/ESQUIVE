@@ -412,7 +412,7 @@ function finNiveau() {
       score: game.score,
       best: levelProgress[currentLevel.id] || 0,
       newBest: etoiles > avant,
-      next: won ? LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV }) : null,
+      next: won ? LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() }) : null,
     };
     setTimeout(() => {
       if (appState === 'game' && game && (game.phase === 'over' || game.phase === 'won')) {
@@ -527,7 +527,7 @@ function dessinerOverlayNiveau() {
       texteCentre('NOUVEAU MEILLEUR RÉSULTAT !', height / 2 + 112, 22 + 3 * pulse, color(255, 220, 0));
     }
     textStyle(NORMAL);
-    const suivant = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV });
+    const suivant = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() });
     const aide = suivant ? `Entrée : niveau ${suivant}   ·   clic ou R : rejouer   ·   N : tableau`
       : 'Cliquez ou appuyez sur R pour rejouer   ·   N : tableau';
     texteCentre(aide, height / 2 + 160, 18, color(180));
@@ -542,7 +542,7 @@ function tableauOuvert() {
 }
 
 function ouvrirTableau() {
-  const cells = LevelRules.board(levelProgress, { unlockAll: DEV });
+  const cells = LevelRules.board(levelProgress, { unlockAll: niveauxOuverts() });
   const total = cells.reduce((s, c) => s + c.stars, 0);
   ui.boardSummary.textContent = `★ ${total} / ${LevelRules.TOTAL_LEVELS * 3}`;
   ui.boardGrid.replaceChildren(...cells.map(cell => {
@@ -1053,6 +1053,11 @@ function demoMenu(dt) {
 
 // ---------------------------------------------------------------- jeu publié : parcours
 
+// Tous les niveaux sont ouverts en mode développeur (?dev) ou en mode test (Réglages).
+function niveauxOuverts() {
+  return DEV || Boolean(settings.testMode);
+}
+
 function sauverReglages() {
   Menu.saveSettings(stockage(), settings);
 }
@@ -1106,7 +1111,7 @@ function initJeuPublie() {
   settings = Menu.loadSettings(stockage());
   ui.hudPause = document.getElementById('btn-hud-pause');
   Menu.init({
-    play: () => lancerNiveau(LevelRules.continueLevel(levelProgress, { unlockAll: DEV })),
+    play: () => lancerNiveau(LevelRules.continueLevel(levelProgress, { unlockAll: niveauxOuverts() })),
     startLevel: id => lancerNiveau(id),
     back: () => (appState === 'game' ? Menu.show(game && (game.phase === 'over' || game.phase === 'won') ? 'end' : 'pause') : Menu.showTitle()),
     getSettings: () => settings,
@@ -1117,12 +1122,13 @@ function initJeuPublie() {
         if (value) activerSonSiVoulu();
         else if (zoneSound) zoneSound.suspend();
       }
+      if (key === 'testMode') Menu.update({ unlockAll: niveauxOuverts() });
     },
     resume: reprendre,
     pause: mettreEnPause,
     restart: () => lancerNiveau(currentLevel.id),
     next: () => {
-      const n = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV });
+      const n = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() });
       if (n) lancerNiveau(n);
     },
     levelsFromGame: () => {
@@ -1130,7 +1136,7 @@ function initJeuPublie() {
       Menu.openLevels(currentLevel.id);
     },
     toMenu: allerAuMenu,
-  }, { progress: levelProgress, unlockAll: false });
+  }, { progress: levelProgress, unlockAll: niveauxOuverts() });
   // la fenêtre perd le focus en pleine partie : pause automatique
   window.addEventListener('blur', mettreEnPause);
   // l'en-tête de développement est masqué : la scène occupe toute la fenêtre
@@ -1244,8 +1250,8 @@ function keyPressed() {
   else if (key === ' ') basculerPause();
   else if ((key === 'r' || key === 'R') && modeJeu()) nouvellePartie();
   else if (keyCode === ENTER && mode === 'niveaux' && game && (game.phase === 'over' || game.phase === 'won')
-    && LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV })) {
-    choisirNiveau(LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV }));
+    && LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() })) {
+    choisirNiveau(LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() }));
   }
   else if (key === 't' || key === 'T') ui.showTrails.checked = !ui.showTrails.checked;
   else if (key === 'v' || key === 'V') ui.showVectors.checked = !ui.showVectors.checked;
@@ -1273,7 +1279,7 @@ function clavierJeuPublie() {
     return false;
   }
   if (keyCode === ENTER && game && game.phase === 'won') {
-    const n = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: DEV });
+    const n = LevelRules.nextLevel(currentLevel.id, levelProgress, { unlockAll: niveauxOuverts() });
     if (n) lancerNiveau(n);
     return false;
   }
